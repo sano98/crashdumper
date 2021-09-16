@@ -234,12 +234,12 @@ class CrashDumper
 			pathLog = Util.slash() + pathLog;
 		}
 		
-		var errorMessage:String = errorMessageStr();
-		
 		if (customDataMethod != null)
 		{
 			customDataMethod(this);			//allow the user to add custom data to the CrashDumper before it outputs
 		}
+
+		var errorMessage:String = errorMessageStr();
 		
 		var logdir:String = session.id + "_CRASH/"; //directory name for this crash
 		
