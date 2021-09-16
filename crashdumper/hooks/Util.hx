@@ -6,9 +6,12 @@ import haxe.io.Path;
 import haxe.io.StringInput;
 import haxe.macro.Context;
 
-#if unifill
+#if (unifill && !lime_unifill)
 import unifill.Unifill;
 import unifill.CodePoint;
+#elseif (unifill && lime_unifill)
+import lime.text.unifill.Unifill;
+import lime.text.unifill.CodePoint;
 #end
 
 /**
