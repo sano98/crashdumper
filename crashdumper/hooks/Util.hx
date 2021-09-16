@@ -64,7 +64,7 @@ class Util
 	
 	public static function fixSlashes(str:String):String
 	{
-		var slash:String = "/";
+		var slash:String = Util.slash();
 		
 		var otherslash:String = "";
 		if (slash == "/")
