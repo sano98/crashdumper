@@ -450,14 +450,19 @@ class CrashDumper
 	 */
 	
 	private function sessionStr():String {
-		return "--------------------------------------" + endl + 
+		var result = "--------------------------------------" + endl + 
 		"filename:\t" + session.fileName + endl + 
 		#if !flash
 			"package:\t" + session.packageName + endl + 
 			"version:\t" + session.version + endl + 
 		#end
 		"sess. ID:\t" + session.id + endl + 
-		"started:\t" + session.startTime.toString();
+		"started:\t" + session.startTime.toString() +endl;
+		for(d in session.customData.keys())
+		{
+			result += d+":\t"+session.customData.get(d)+endl;
+		}
+		return result;
 	}
 	
 	/**
