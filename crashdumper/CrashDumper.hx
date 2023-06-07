@@ -5,6 +5,7 @@ import haxe.CallStack;
 import haxe.crypto.Crc32;
 import haxe.io.Bytes;
 import haxe.io.BytesOutput;
+import haxe.io.Path;
 import haxe.io.StringInput;
 import haxe.Utf8;
 import haxe.zip.Entry;
@@ -191,6 +192,16 @@ class CrashDumper
 	{
 		if(!CrashDumper.active) return;
 		CACHED_STACK_TRACE = getStackTrace();
+
+		if(Std.is(e, openfl.events.UncaughtErrorEvent)) 
+		{
+			var error = (cast e : openfl.events.UncaughtErrorEvent);
+			if(Std.isOfType(error.error, haxe.Exception))
+			{
+				CACHED_STACK_TRACE = (cast error.error:haxe.Exception).details();
+			}
+		}
+		
 		
 		#if !flash
 			doErrorStuff(e, true, false);		//easy to separately override
@@ -476,12 +487,13 @@ class CrashDumper
 	private function crashStr(errorData:Dynamic):String {
 		var str:String = "--------------------------------------" + endl + 
 		"crashed:\t" + Date.now().toString() + endl + 
-		"duration:\t" + getTimeStr((Date.now().getTime()-session.startTime.getTime())) + endl + 
-		"error:\t\t" + errorData + endl;
+		"duration:\t" + getTimeStr((Date.now().getTime()-session.startTime.getTime())) + endl;
+		// disabled because it would output the same text as Exception.details()
+		//+ "error:\t\t" + errorData + endl;
 		if (SHOW_STACK)
 		{
 			#if sys
-				str += "stack:" + endl + CACHED_STACK_TRACE + endl;
+				str += "details:" + endl + CACHED_STACK_TRACE + endl;
 			#elseif flash
 				str += "stack:" + endl + errorData.error.getStackTrace() + endl;
 			#end
