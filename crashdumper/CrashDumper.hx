@@ -294,9 +294,9 @@ class CrashDumper
 					//write out the error message
 					
 					var outPath = Path.join([path2LogErrors, Path.removeTrailingSlashes(logdir)+ "_error.txt"]);
-					trace("logdir: "+ logdir);
-					trace("path2LogErrors: "+ path2LogErrors);
-					trace("outPath: "+ outPath);
+					//trace("logdir: "+ logdir);
+					//trace("path2LogErrors: "+ path2LogErrors);
+					//trace("outPath: "+ outPath);
 					var f:FileOutput = File.write(outPath);
 					f.writeString(errorMessage);
 					f.close();
