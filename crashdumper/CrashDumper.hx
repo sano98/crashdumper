@@ -225,8 +225,8 @@ class CrashDumper
 		if(!CrashDumper.active) return;
 		theError = e;
 		
-		var pathLog:String = "log/";				//  path/to/log/
-		pathLogErrors = pathLog + "errors/";		//  path/to/log/errors/
+		var pathLog:String = "log/";						//  path/to/log/
+		pathLogErrors = Path.join([pathLog, "errors"]);		//  path/to/log/errors/
 		
 		//Prepend pathLog with a slash character if the user path does not end with a slash character
 		if (path.length >= 0 && path.charAt(path.length - 1) != "/" && path.charAt(path.length - 1) != "\\")
@@ -275,15 +275,17 @@ class CrashDumper
 					failsafe--;
 				}
 				
-				FileSystem.createDirectory(path2LogErrorsDir);
+				//FileSystem.createDirectory(path2LogErrorsDir);
 				
-				if (FileSystem.exists(path2LogErrorsDir))
+				if (FileSystem.exists(path2LogErrors))
 				{
-					uniqueErrorLogPath = path2LogErrorsDir;
+					//uniqueErrorLogPath = path2LogErrorsDir;
 					//write out the error message
 					
-					var outPath = Util.uPath([path2LogErrors, logdir, "_error.txt"]);
-					
+					var outPath = Path.join([path2LogErrors, Path.removeTrailingSlashes(logdir)+ "_error.txt"]);
+					trace("logdir: "+ logdir);
+					trace("path2LogErrors: "+ path2LogErrors);
+					trace("outPath: "+ outPath);
 					var f:FileOutput = File.write(outPath);
 					f.writeString(errorMessage);
 					f.close();
