@@ -193,7 +193,7 @@ class CrashDumper
 		if(!CrashDumper.active) return;
 		CACHED_STACK_TRACE = getStackTrace();
 
-		if(Std.is(e, openfl.events.UncaughtErrorEvent)) 
+		if(Std.isOfType(e, openfl.events.UncaughtErrorEvent)) 
 		{
 			var error = (cast e : openfl.events.UncaughtErrorEvent);
 			if(Std.isOfType(error.error, haxe.Exception))
@@ -210,7 +210,7 @@ class CrashDumper
 		#end
 		
 		//cancel the event. We control exiting from here on out.
-		if(Std.is(e, openfl.events.Event)) 
+		if(Std.isOfType(e, openfl.events.Event)) 
 		{
 			e.stopImmediatePropagation();
 		}
