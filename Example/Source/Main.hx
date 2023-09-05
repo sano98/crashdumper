@@ -43,7 +43,7 @@ class Main extends Sprite {
 		#if flash
 			var crashDumper = new CrashDumper(unique_id, stage);
 		#else
-			var crashDumper = new CrashDumper(unique_id, ".");
+			var crashDumper = new CrashDumper(unique_id);
 		#end
 		
 		//Here is where you would load your config and/or save data from file
