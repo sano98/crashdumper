@@ -43,7 +43,7 @@ class SessionData
 			now = StringTools.replace(now, " ", "_");
 		}
 		while (now.indexOf(":") != -1) {
-			now = StringTools.replace(now, ":", "'");
+			now = StringTools.replace(now, ":", ".");
 		}
 		return prefix + now + suffix;
 	}

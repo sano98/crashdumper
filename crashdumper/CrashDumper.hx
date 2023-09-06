@@ -5,6 +5,7 @@ import haxe.CallStack;
 import haxe.crypto.Crc32;
 import haxe.io.Bytes;
 import haxe.io.BytesOutput;
+import haxe.io.Path;
 import haxe.io.StringInput;
 import haxe.Utf8;
 import haxe.zip.Entry;
@@ -191,15 +192,25 @@ class CrashDumper
 	{
 		if(!CrashDumper.active) return;
 		CACHED_STACK_TRACE = getStackTrace();
+
+		if(Std.isOfType(e, openfl.events.UncaughtErrorEvent)) 
+		{
+			var error = (cast e : openfl.events.UncaughtErrorEvent);
+			if(Std.isOfType(error.error, haxe.Exception))
+			{
+				CACHED_STACK_TRACE = (cast error.error:haxe.Exception).details();
+			}
+		}
+		
 		
 		#if !flash
-			doErrorStuff(e);		//easy to separately override
+			doErrorStuff(e, true, false);		//easy to separately override
 		#else
 			doErrorStuffByHTTP(e);	//minimal flash error report
 		#end
 		
 		//cancel the event. We control exiting from here on out.
-		if(Std.is(e, openfl.events.Event)) 
+		if(Std.isOfType(e, openfl.events.Event)) 
 		{
 			e.stopImmediatePropagation();
 		}
@@ -225,8 +236,8 @@ class CrashDumper
 		if(!CrashDumper.active) return;
 		theError = e;
 		
-		var pathLog:String = "log/";				//  path/to/log/
-		pathLogErrors = pathLog + "errors/";		//  path/to/log/errors/
+		var pathLog:String = "log/";						//  path/to/log/
+		pathLogErrors = Path.join([pathLog, "errors"]);		//  path/to/log/errors/
 		
 		//Prepend pathLog with a slash character if the user path does not end with a slash character
 		if (path.length >= 0 && path.charAt(path.length - 1) != "/" && path.charAt(path.length - 1) != "\\")
@@ -275,15 +286,17 @@ class CrashDumper
 					failsafe--;
 				}
 				
-				FileSystem.createDirectory(path2LogErrorsDir);
+				//FileSystem.createDirectory(path2LogErrorsDir);
 				
-				if (FileSystem.exists(path2LogErrorsDir))
+				if (FileSystem.exists(path2LogErrors))
 				{
-					uniqueErrorLogPath = path2LogErrorsDir;
+					//uniqueErrorLogPath = path2LogErrorsDir;
 					//write out the error message
 					
-					var outPath = Util.uPath([path2LogErrors, logdir, "_error.txt"]);
-					
+					var outPath = Path.join([path2LogErrors, Path.removeTrailingSlashes(logdir)+ "_error.txt"]);
+					//trace("logdir: "+ logdir);
+					//trace("path2LogErrors: "+ path2LogErrors);
+					//trace("outPath: "+ outPath);
 					var f:FileOutput = File.write(outPath);
 					f.writeString(errorMessage);
 					f.close();
@@ -474,12 +487,13 @@ class CrashDumper
 	private function crashStr(errorData:Dynamic):String {
 		var str:String = "--------------------------------------" + endl + 
 		"crashed:\t" + Date.now().toString() + endl + 
-		"duration:\t" + getTimeStr((Date.now().getTime()-session.startTime.getTime())) + endl + 
-		"error:\t\t" + errorData + endl;
+		"duration:\t" + getTimeStr((Date.now().getTime()-session.startTime.getTime())) + endl;
+		// disabled because it would output the same text as Exception.details()
+		//+ "error:\t\t" + errorData + endl;
 		if (SHOW_STACK)
 		{
 			#if sys
-				str += "stack:" + endl + CACHED_STACK_TRACE + endl;
+				str += "details:" + endl + CACHED_STACK_TRACE + endl;
 			#elseif flash
 				str += "stack:" + endl + errorData.error.getStackTrace() + endl;
 			#end
