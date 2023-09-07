@@ -488,8 +488,7 @@ class CrashDumper
 		var str:String = "--------------------------------------" + endl + 
 		"crashed:\t" + Date.now().toString() + endl + 
 		"duration:\t" + getTimeStr((Date.now().getTime()-session.startTime.getTime())) + endl;
-		// disabled because it would output the same text as Exception.details()
-		//+ "error:\t\t" + errorData + endl;
+		str += "error:\t\t" + errorData + endl;
 		if (SHOW_STACK)
 		{
 			#if sys
