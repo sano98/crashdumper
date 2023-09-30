@@ -71,6 +71,8 @@ class CrashDumper
 	public var pathLogErrors(default, null):String;
 	public var uniqueErrorLogPath(default, null):String;
 	
+	public var lastCrashLogFilePath:String = "";
+	
 	/**
 	 * Creates a new CrashDumper that will listen for uncaught error events and properly handle the crash
 	 * @param	sessionId			a unique string identifier for this session
@@ -262,59 +264,68 @@ class CrashDumper
 		
 		var path2Log = Util.uPath([path, pathLog]);
 		var path2LogErrors = Util.uPath([path, pathLogErrors]);
-		var path2LogErrorsDir = Util.uPath([path, pathLogErrors, logdir]);
+		// var path2LogErrorsDir = Util.uPath([path, pathLogErrors, logdir]);
 		
 		#if sys
-			if (writeToFile)
+		if (writeToFile)
+		{
+			if (!FileSystem.exists(path2Log))
 			{
-				if (!FileSystem.exists(path2Log))
-				{
-					FileSystem.createDirectory(path2Log);
-				}
-				if (!FileSystem.exists(path2LogErrors))
-				{
-					FileSystem.createDirectory(path2LogErrors);
-				}
+				FileSystem.createDirectory(path2Log);
+			}
+			if (!FileSystem.exists(path2LogErrors))
+			{
+				FileSystem.createDirectory(path2LogErrors);
+			}
+			
+			
+			function buildOutPath(dir:String, filePrefix:String, counter:Int)
+			{
+				var counterString = padDigit(counter, 3);
+				return Path.join([dir, filePrefix + "-" + counterString + "_crash.txt"]);
+			}
+			
+			
+			if (FileSystem.exists(path2LogErrors))
+			{
 				
+				//write out the error message
 				var counter:Int = 0;
 				var failsafe:Int = 999;
-				while (FileSystem.exists(path2LogErrorsDir) && failsafe > 0)
+				var outPath = buildOutPath(path2LogErrors, session.id, counter);
+					
+				while (FileSystem.exists(outPath) && failsafe > 0)
 				{
-					//if the session ID is not unique for some reason, append numbers until it is
-					logdir = session.id + "_CRASH_" + counter + "/";
 					counter++;
 					failsafe--;
+					//if the session ID is not unique for some reason, append numbers until it is
+					outPath = buildOutPath(path2LogErrors, session.id, counter);
+					
 				}
+					
+				//trace("logdir: "+ logdir);
+				//trace("path2LogErrors: "+ path2LogErrors);
+				//trace("outPath: "+ outPath);
+				var f:FileOutput = File.write(outPath);
+				f.writeString(errorMessage);
+				f.close();
+
+				this.lastCrashLogFilePath = outPath;
 				
-				//FileSystem.createDirectory(path2LogErrorsDir);
+				var sanityCheck:String = File.getContent(outPath);
 				
-				if (FileSystem.exists(path2LogErrors))
+				//write out all our associated game session files
+				for (filename in session.files.keys())
 				{
-					//uniqueErrorLogPath = path2LogErrorsDir;
-					//write out the error message
-					
-					var outPath = Path.join([path2LogErrors, Path.removeTrailingSlashes(logdir)+ "_error.txt"]);
-					//trace("logdir: "+ logdir);
-					//trace("path2LogErrors: "+ path2LogErrors);
-					//trace("outPath: "+ outPath);
-					var f:FileOutput = File.write(outPath);
-					f.writeString(errorMessage);
-					f.close();
-					
-					var sanityCheck:String = File.getContent(outPath);
-					
-					//write out all our associated game session files
-					for (filename in session.files.keys())
+					var filecontent:String = session.files.get(filename);
+					if (filecontent != "" && filecontent != null)
 					{
-						var filecontent:String = session.files.get(filename);
-						if (filecontent != "" && filecontent != null)
-						{
-							var fileOut = Util.uPath([pathLogErrors, logdir, filename]);
-							logFile(fileOut, filecontent);
-						}
+						var fileOut = Util.uPath([pathLogErrors, logdir, filename]);
+						logFile(fileOut, filecontent);
 					}
 				}
 			}
+		}
 		#end
 		
 		if (sendToServer)
@@ -463,19 +474,19 @@ class CrashDumper
 	 */
 	
 	private function sessionStr():String {
-		var result = "--------------------------------------" + endl + 
-		"filename:\t" + session.fileName + endl + 
+		var str = "--------------------------------------";
+		str = endlConcat(str, "filename:\t" + session.fileName);
 		#if !flash
-			"package:\t" + session.packageName + endl + 
-			"version:\t" + session.version + endl + 
+		str = endlConcat(str, "package:\t" + session.packageName);
+		str = endlConcat(str, "version:\t" + session.version);
 		#end
-		"sess. ID:\t" + session.id + endl + 
-		"started:\t" + session.startTime.toString() +endl;
+		str = endlConcat(str, "sess. ID:\t" + session.id);
+		str = endlConcat(str, "started:\t" + session.startTime.toString());
 		for(d in session.customData.keys())
 		{
-			result += d+":\t"+session.customData.get(d)+endl;
+			str = endlConcat(str, d+":\t"+session.customData.get(d));
 		}
-		return result;
+		return str;
 	}
 	
 	/**
@@ -484,17 +495,20 @@ class CrashDumper
 	 * @return
 	 */
 	
-	private function crashStr(errorData:Dynamic):String {
-		var str:String = "--------------------------------------" + endl + 
-		"crashed:\t" + Date.now().toString() + endl + 
-		"duration:\t" + getTimeStr((Date.now().getTime()-session.startTime.getTime())) + endl;
-		str += "error:\t\t" + errorData + endl;
+	private function crashStr(errorData:Dynamic):String 
+	{
+		var str:String = "--------------------------------------";
+		str = endlConcat(str, "crashed:\t" + Date.now().toString()); 
+		str = endlConcat(str, "duration:\t" + getTimeStr((Date.now().getTime()-session.startTime.getTime())));
+		str = endlConcat(str, "error:\t\t" + errorData);
 		if (SHOW_STACK)
 		{
 			#if sys
-				str += "details:" + endl + CACHED_STACK_TRACE + endl;
+			str = endlConcat(str, "details:");
+			str = endlConcat(str, CACHED_STACK_TRACE);
 			#elseif flash
-				str += "stack:" + endl + errorData.error.getStackTrace() + endl;
+			str = endlConcat(str, "stack:");
+			str = endlConcat(str, errorData.error.getStackTrace());
 			#end
 		}
 		return str;
